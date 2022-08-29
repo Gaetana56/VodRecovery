@@ -80,7 +80,7 @@ def get_duration(hours, minutes):
 
 
 def get_reps(duration):
-    reps = ((duration * 60) + 2000) * 2
+    reps = ((duration * 60) + 2000)
     return reps
 
 
@@ -280,7 +280,7 @@ def get_valid_clips_urls(clip_list, reps):
         total_counter += 1
         full_url_list.append(result.url)
         if total_counter == 500:
-            print(str(len(full_url_list)) + " of " + str(round(reps / 2)))
+            print(str(len(full_url_list) * 2) + " of " + str(round(reps)))
             total_counter = 0
         if result.status_code == 200:
             valid_counter += 1
@@ -364,7 +364,7 @@ def get_random_clips():
     minutes = input("Enter stream duration minute value: ")
     full_url_list = (get_all_clip_urls(vod_id, get_reps(get_duration(hours, minutes))))
     random.shuffle(full_url_list)
-    print("Total Number of Urls: " + str(len(full_url_list)))
+    print("Total Number of Urls: " + str(len(full_url_list) * 2))
     rs = (grequests.head(u) for u in full_url_list)
     for result in grequests.imap(rs, size=100):
         if result.status_code == 200:
@@ -394,7 +394,7 @@ def bulk_clip_recovery():
             total_counter += 1
             iteration_counter += 1
             if total_counter == 500:
-                print(str(iteration_counter) + " of " + str(len(original_vod_url_list)))
+                print(str(iteration_counter * 2) + " of " + str(len(original_vod_url_list) * 2))
                 total_counter = 0
             if result.status_code == 200:
                 valid_counter += 1
