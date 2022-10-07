@@ -1,7 +1,7 @@
 # VodRecovery
 * Created By: ItIckeYd
 * Initial Release: May 3rd, 2022
-* The script is used to retrieve sub-only and deleted videos from twitch.
+* The script is used to retrieve sub-only and deleted videos/clips from twitch.
 * Credits to daylamtayari - [TwitchRecover](https://github.com/TwitchRecover/TwitchRecover) repository helped with the logic to recover twitch videos.
 
 # Script Installation
@@ -25,7 +25,7 @@
 
 # Optional IDE
 * Python has a few code editors that can be used which include the following:
-1. PyCharm
+1. PyCharm (Recommended)
 2. Visual Studio Code
 
 # Additional Notes
@@ -34,5 +34,5 @@
 
 
 # Latest Release
-[Stable Release 1.0.0.9](https://github.com/ItIckeYd/VodRecovery/releases/tag/1.0.0.9)
+[Stable Release 1.0.1.0](https://github.com/ItIckeYd/VodRecovery/releases/tag/1.0.1.0)
 
