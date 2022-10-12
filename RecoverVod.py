@@ -5,6 +5,7 @@ import random
 from datetime import timedelta
 import grequests
 import requests
+from bs4 import BeautifulSoup
 
 domains = ["https://vod-secure.twitch.tv/",
            "https://vod-metro.twitch.tv/",
@@ -23,6 +24,30 @@ domains = ["https://vod-secure.twitch.tv/",
            "https://d1mhjrowxxagfy.cloudfront.net/",
            "https://ddacn6pr5v0tl.cloudfront.net/",
            "https://d3aqoihi2n8ty8.cloudfront.net/"]
+
+user_agents = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+               "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+               "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+               "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+               "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+               "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:103.0) Gecko/20100101 Firefox/103.0",
+               "Mozilla/5.0 (Macintosh; Intel Mac OS X 12.5; rv:103.0) Gecko/20100101 Firefox/103.0",
+               "Mozilla/5.0 (X11; Linux i686; rv:103.0) Gecko/20100101 Firefox/103.0",
+               "Mozilla/5.0 (Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0",
+               "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:103.0) Gecko/20100101 Firefox/103.0",
+               "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0",
+               "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0",
+               "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0",
+               "Mozilla/5.0 (Macintosh; Intel Mac OS X 12.5; rv:102.0) Gecko/20100101 Firefox/102.0",
+               "Mozilla/5.0 (X11; Linux i686; rv:102.0) Gecko/20100101 Firefox/102.0",
+               "Mozilla/5.0 (Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
+               "Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:102.0) Gecko/20100101 Firefox/102.0",
+               "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
+               "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:102.0) Gecko/20100101 Firefox/102.0",
+               "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.6 Safari/605.1.15",
+               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36 Edg/103.0.1264.77",
+               "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36 Edg/103.0.1264.77",
+               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36']
 
 
 def return_main_menu():
@@ -51,6 +76,13 @@ def generate_website_links(streamer, vod_id):
                     "https://streamscharts.com/channels/" + streamer + "/streams/" + vod_id]
 
     return website_list
+
+
+def return_header():
+    header = {
+        'user-agent': f'{random.choice(user_agents)}'
+    }
+    return header
 
 
 def remove_file(file_path):
@@ -147,6 +179,22 @@ def get_valid_urls(url_list):
     return valid_url_list
 
 
+def parse_datetime_streamscharts(tracker_url):
+    for _ in range(10):
+        response = requests.get(tracker_url, headers=return_header(), allow_redirects=False)
+        if response.status_code == 200:
+            bs = BeautifulSoup(response.content, 'html.parser')
+            streamscharts_datetime = bs.find_all('time', {'class': 'ml-2 font-bold'})[0].text.strip().replace(",", "") + ":00"
+            return datetime.datetime.strftime(datetime.datetime.strptime(streamscharts_datetime, "%d %b %Y %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+
+
+def parse_datetime_twitchtracker(tracker_url):
+    response = requests.get(tracker_url, headers=return_header(), allow_redirects=False)
+    bs = BeautifulSoup(response.content, 'html.parser')
+    twitchtracker_datetime = bs.find_all('div', {'class': 'stream-timestamp-dt'})[0].text
+    return twitchtracker_datetime
+
+
 def unmute_vod(url):
     file_contents = []
     counter = 0
@@ -229,7 +277,7 @@ def check_segment_availability(segments):
     return valid_segment_counter
 
 
-def recover_vod():
+def manual_vod_recover():
     streamer_name = input("Enter streamer name: ")
     vod_id = input("Enter vod id: ")
     timestamp = input("Enter VOD start time (YYYY-MM-DD HH:MM:SS): ")
@@ -258,6 +306,62 @@ def recover_vod():
             "No vods found using current domain list. " + "\n" + "See the following links if you would like to check the other sites: " + "\n")
         for website in generate_website_links(streamer_name, vod_id):
             print(website)
+
+
+def website_vod_recover():
+    tracker_url = input("Enter twitchtracker/streamscharts url:  ")
+    if "streamscharts" in tracker_url:
+        streamer = tracker_url.split("channels/", 1)[1].split("/")[0]
+        vod_id = tracker_url.split("streams/", 1)[1]
+        valid_url_list = get_valid_urls(get_all_urls(streamer, vod_id, parse_datetime_streamscharts(tracker_url)))
+        if len(valid_url_list) > 0:
+            if vod_is_muted(valid_url_list[0]):
+                print(valid_url_list[0] + "\n" + "Vod contains muted segments")
+                user_input = input("Would you like to unmute the vod (Y/N): ")
+                if user_input.upper() == "Y":
+                    unmute_vod(valid_url_list[0])
+                    print("Total Number of Segments: " + str(len(get_segments(valid_url_list[0]))))
+                    user_option = input("Would you like to check if segments are valid (Y/N): ")
+                    if user_option.upper() == "Y":
+                        print(str(check_segment_availability(get_segments(valid_url_list[0]))) + " of " + str(
+                            len(get_segments(valid_url_list[0]))) + " Segments are valid")
+                    else:
+                        return
+                else:
+                    return
+            else:
+                print(valid_url_list[0] + "\n" + "Vod does NOT contain muted segments")
+        else:
+            print(
+                "No vods found using current domain list. " + "\n" + "See the following links if you would like to check the other sites: " + "\n")
+            for website in generate_website_links(streamer, vod_id):
+                print(website)
+    else:
+        streamer = tracker_url.split("com/", 1)[1].split("/")[0]
+        vod_id = tracker_url.split("streams/", 1)[1]
+        valid_url_list = get_valid_urls(get_all_urls(streamer, vod_id, parse_datetime_twitchtracker(tracker_url)))
+        if len(valid_url_list) > 0:
+            if vod_is_muted(valid_url_list[0]):
+                print(valid_url_list[0] + "\n" + "Vod contains muted segments")
+                user_input = input("Would you like to unmute the vod (Y/N): ")
+                if user_input.upper() == "Y":
+                    unmute_vod(valid_url_list[0])
+                    print("Total Number of Segments: " + str(len(get_segments(valid_url_list[0]))))
+                    user_option = input("Would you like to check if segments are valid (Y/N): ")
+                    if user_option.upper() == "Y":
+                        print(str(check_segment_availability(get_segments(valid_url_list[0]))) + " of " + str(
+                            len(get_segments(valid_url_list[0]))) + " Segments are valid")
+                    else:
+                        return
+                else:
+                    return
+            else:
+                print(valid_url_list[0] + "\n" + "Vod does NOT contain muted segments")
+        else:
+            print(
+                "No vods found using current domain list. " + "\n" + "See the following links if you would like to check the other sites: " + "\n")
+            for website in generate_website_links(streamer, vod_id):
+                print(website)
 
 
 def bulk_vod_recovery():
@@ -458,7 +562,13 @@ def run_script():
             vod_type = int(input(
                 "Enter what type of vod recovery: " + "\n" + "1) Recover Vod" + "\n" + "2) Recover vods from SullyGnome CSV export" + "\n"))
             if vod_type == 1:
-                recover_vod()
+                recovery_method = input("Enter vod recovery method: " + "\n" + "1) Manual Recover" + "\n" + "2) Website Recover" + "\n")
+                if recovery_method == "1":
+                    manual_vod_recover()
+                elif recovery_method == "2":
+                    website_vod_recover()
+                else:
+                    print("Invalid option returning to main menu.")
             elif vod_type == 2:
                 bulk_vod_recovery()
             else:
