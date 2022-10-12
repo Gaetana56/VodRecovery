@@ -35,13 +35,13 @@ def get_default_directory():
     return os.path.expanduser("~\\Documents\\")
 
 
-def generate_log_filename(directory, streamer, vod_id):
-    file_path = os.path.join(directory + "\\" + streamer + "_" + vod_id + "_log.txt")
-    return file_path
+def generate_log_filename(streamer, vod_id):
+    log_filename = os.path.join(get_default_directory(), streamer + "_" + vod_id + "_log.txt")
+    return log_filename
 
 
 def generate_vod_filename(streamer, vod_id):
-    vod_filename = get_default_directory() + "VodRecovery_" + streamer + "_" + vod_id + ".m3u8"
+    vod_filename = os.path.join(get_default_directory(), "VodRecovery_" + streamer + "_" + vod_id + ".m3u8")
     return vod_filename
 
 
@@ -112,12 +112,12 @@ def get_all_clip_urls(clip_dict, clip_format):
 
 def parse_m3u8_link(url):
     streamer = url.split("_")[1]
-    vod_id = url.split("_")[3].split("/")[0]
+    vod_id = url.split("_")[2].split("/")[0]
     return streamer, vod_id
 
 
-def return_file_contents(directory, streamer, vod_id):
-    with open(generate_log_filename(directory, streamer, vod_id)) as f:
+def return_file_contents(streamer, vod_id):
+    with open(generate_log_filename(streamer, vod_id)) as f:
         content = f.readlines()
         content = [x.strip() for x in content]
     return content
@@ -229,11 +229,11 @@ def check_segment_availability(segments):
 
 def recover_vod():
     streamer_name = input("Enter streamer name: ")
-    vodID = input("Enter vod id: ")
+    vod_id = input("Enter vod id: ")
     timestamp = input("Enter VOD start time (YYYY-MM-DD HH:MM:SS): ")
     print("Vod is " + str(
         get_vod_age(timestamp)) + " days old. If the vod is older than 60 days chances of recovery are slim." + "\n")
-    valid_url_list = get_valid_urls(get_all_urls(streamer_name, vodID, timestamp))
+    valid_url_list = get_valid_urls(get_all_urls(streamer_name, vod_id, timestamp))
     if len(valid_url_list) > 0:
         if vod_is_muted(valid_url_list[0]):
             print(valid_url_list[0] + "\n" + "Vod contains muted segments")
@@ -254,7 +254,7 @@ def recover_vod():
     else:
         print(
             "No vods found using current domain list. " + "\n" + "See the following links if you would like to check the other sites: " + "\n")
-        for website in generate_website_links(streamer_name, vodID):
+        for website in generate_website_links(streamer_name, vod_id):
             print(website)
 
 
@@ -295,23 +295,23 @@ def get_valid_clips_urls(clip_list, reps):
 
 def recover_all_clips():
     streamer_name = input("Enter streamer name: ")
-    vodID = input("Enter vod id: ")
+    vod_id = input("Enter vod id: ")
     hours = input("Enter stream duration hour value: ")
     minutes = input("Enter stream duration minute value: ")
     clip_format = input("What clip url format would you like to use (IF multiple.. separate by spaces)? " + "\n" + "1) Default (Most vods)" + "\n" + "2) Alternate (2017 and up)" + "\n" + "3) Archived (June-August of 2016)" + "\n").split()
     duration = get_duration(hours, minutes)
     reps = get_reps(duration)
-    valid_clips = get_valid_clips_urls(get_all_clip_urls(get_clip_format(vodID, reps), clip_format), (reps*len(clip_format))/2)
+    valid_clips = get_valid_clips_urls(get_all_clip_urls(get_clip_format(vod_id, reps), clip_format), (reps*len(clip_format))/2)
     if len(valid_clips) >= 1:
         user_option = input("Do you want to log results to file (Y/N): ")
         if user_option.upper() == "Y":
-            with open(generate_log_filename(get_default_directory(), streamer_name, vodID), "w") as log_file:
+            with open(generate_log_filename(streamer_name, vod_id), "w") as log_file:
                 for url in valid_clips:
                     log_file.write(url + "\n")
             log_file.close()
             user_option = input("Do you want to download the recovered clips (Y/N): ")
             if user_option.upper() == "Y":
-                download_clips(get_default_directory(), streamer_name, vodID)
+                download_clips(get_default_directory(), streamer_name, vod_id)
             else:
                 return
         else:
@@ -409,7 +409,7 @@ def bulk_clip_recovery():
             if result.status_code == 200:
                 valid_counter += 1
                 print(str(valid_counter) + " Clip(s) Found")
-                with open(generate_log_filename(get_default_directory(), streamer, vod), "a+") as log_file:
+                with open(generate_log_filename(streamer, vod), "a+") as log_file:
                     log_file.write(result.url + "\n")
                 log_file.close()
             else:
@@ -418,19 +418,19 @@ def bulk_clip_recovery():
             if user_option.upper() == "Y":
                 download_clips(get_default_directory(), streamer, vod)
             else:
-                print("Recovered clips logged to " + generate_log_filename(get_default_directory(), streamer, vod))
+                print("Recovered clips logged to " + generate_log_filename(streamer, vod))
         total_counter, valid_counter, iteration_counter = 0, 0, 0
 
 
 def download_clips(directory, streamer, vod_id):
     counter = 0
     print("Starting Download....")
-    download_directory = directory + "\\" + streamer.title() + "_" + vod_id
+    download_directory = os.path.join(directory, streamer.title() + "_" + vod_id)
     if os.path.exists(download_directory):
         pass
     else:
         os.mkdir(download_directory)
-    for links in return_file_contents(directory, streamer, vod_id):
+    for links in return_file_contents(streamer, vod_id):
         counter = counter + 1
         if "-offset-" in links:
             clip_offset = links.split("-offset-")[1].replace(".mp4", "")
@@ -440,10 +440,10 @@ def download_clips(directory, streamer, vod_id):
         r = requests.get(links, stream=True)
         if r.status_code == 200:
             if str(link_url).endswith(".mp4"):
-                with open(download_directory + "\\" + streamer.title() + "_" + str(vod_id) + "_" + str(
-                        clip_offset) + ".mp4", 'wb') as x:
+                with open(os.path.join(download_directory, streamer.title() + "_" + str(vod_id) + "_" + str(
+                        clip_offset)) + ".mp4", 'wb') as x:
                     print(datetime.datetime.now().strftime("%Y/%m/%d %I:%M:%S    ") + "Downloading... Clip " + str(
-                        counter) + " of " + str(len(return_file_contents(directory, streamer, vod_id))) + " - " + links)
+                        counter) + " of " + str(len(return_file_contents(streamer, vod_id))) + " - " + links)
                     x.write(r.content)
             else:
                 print("ERROR: Please check the log file and failing link!", links)
