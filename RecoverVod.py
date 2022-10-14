@@ -276,36 +276,39 @@ def check_segment_availability(segments):
             valid_segment_counter += 1
     return valid_segment_counter
 
-
-def manual_vod_recover():
-    streamer_name = input("Enter streamer name: ")
-    vod_id = input("Enter vod id: ")
-    timestamp = input("Enter VOD start time (YYYY-MM-DD HH:MM:SS): ")
+def vod_recover(streamer, vod_id, timestamp):
     print("Vod is " + str(
         get_vod_age(timestamp)) + " days old. If the vod is older than 60 days chances of recovery are slim." + "\n")
-    valid_url_list = get_valid_urls(get_all_urls(streamer_name, vod_id, timestamp))
-    if len(valid_url_list) > 0:
-        if vod_is_muted(valid_url_list[0]):
-            print(valid_url_list[0] + "\n" + "Vod contains muted segments")
+    url_list = get_valid_urls(get_all_urls(streamer, vod_id, timestamp))
+    if len(url_list) > 0:
+        if vod_is_muted(url_list[0]):
+            print(url_list[0] + "\n" + "Vod contains muted segments")
             user_input = input("Would you like to unmute the vod (Y/N): ")
             if user_input.upper() == "Y":
-                unmute_vod(valid_url_list[0])
-                print("Total Number of Segments: " + str(len(get_segments(valid_url_list[0]))))
+                unmute_vod(url_list[0])
+                print("Total Number of Segments: " + str(len(get_segments(url_list[0]))))
                 user_option = input("Would you like to check if segments are valid (Y/N): ")
                 if user_option.upper() == "Y":
-                    print(str(check_segment_availability(get_segments(valid_url_list[0]))) + " of " + str(
-                        len(get_segments(valid_url_list[0]))) + " Segments are valid")
+                    print(str(check_segment_availability(get_segments(url_list[0]))) + " of " + str(
+                        len(get_segments(url_list[0]))) + " Segments are valid")
                 else:
                     return
             else:
                 return
         else:
-            print(valid_url_list[0] + "\n" + "Vod does NOT contain muted segments")
+            print(url_list[0] + "\n" + "Vod does NOT contain muted segments")
     else:
         print(
             "No vods found using current domain list. " + "\n" + "See the following links if you would like to check the other sites: " + "\n")
-        for website in generate_website_links(streamer_name, vod_id):
+        for website in generate_website_links(streamer, vod_id):
             print(website)
+
+
+def manual_vod_recover():
+    streamer_name = input("Enter streamer name: ")
+    vod_id = input("Enter vod id: ")
+    timestamp = input("Enter VOD start time (YYYY-MM-DD HH:MM:SS): ")
+    vod_recover(streamer_name, vod_id, timestamp)
 
 
 def website_vod_recover():
@@ -313,56 +316,14 @@ def website_vod_recover():
     if "streamscharts" in tracker_url:
         streamer = tracker_url.split("channels/", 1)[1].split("/")[0]
         vod_id = tracker_url.split("streams/", 1)[1]
-        valid_url_list = get_valid_urls(get_all_urls(streamer, vod_id, parse_datetime_streamscharts(tracker_url)))
-        if len(valid_url_list) > 0:
-            if vod_is_muted(valid_url_list[0]):
-                print(valid_url_list[0] + "\n" + "Vod contains muted segments")
-                user_input = input("Would you like to unmute the vod (Y/N): ")
-                if user_input.upper() == "Y":
-                    unmute_vod(valid_url_list[0])
-                    print("Total Number of Segments: " + str(len(get_segments(valid_url_list[0]))))
-                    user_option = input("Would you like to check if segments are valid (Y/N): ")
-                    if user_option.upper() == "Y":
-                        print(str(check_segment_availability(get_segments(valid_url_list[0]))) + " of " + str(
-                            len(get_segments(valid_url_list[0]))) + " Segments are valid")
-                    else:
-                        return
-                else:
-                    return
-            else:
-                print(valid_url_list[0] + "\n" + "Vod does NOT contain muted segments")
-        else:
-            print(
-                "No vods found using current domain list. " + "\n" + "See the following links if you would like to check the other sites: " + "\n")
-            for website in generate_website_links(streamer, vod_id):
-                print(website)
-    else:
+        vod_recover(streamer, vod_id, parse_datetime_streamscharts(tracker_url))
+    elif "twitchtracker" in tracker_url:
         streamer = tracker_url.split("com/", 1)[1].split("/")[0]
         vod_id = tracker_url.split("streams/", 1)[1]
-        valid_url_list = get_valid_urls(get_all_urls(streamer, vod_id, parse_datetime_twitchtracker(tracker_url)))
-        if len(valid_url_list) > 0:
-            if vod_is_muted(valid_url_list[0]):
-                print(valid_url_list[0] + "\n" + "Vod contains muted segments")
-                user_input = input("Would you like to unmute the vod (Y/N): ")
-                if user_input.upper() == "Y":
-                    unmute_vod(valid_url_list[0])
-                    print("Total Number of Segments: " + str(len(get_segments(valid_url_list[0]))))
-                    user_option = input("Would you like to check if segments are valid (Y/N): ")
-                    if user_option.upper() == "Y":
-                        print(str(check_segment_availability(get_segments(valid_url_list[0]))) + " of " + str(
-                            len(get_segments(valid_url_list[0]))) + " Segments are valid")
-                    else:
-                        return
-                else:
-                    return
-            else:
-                print(valid_url_list[0] + "\n" + "Vod does NOT contain muted segments")
-        else:
-            print(
-                "No vods found using current domain list. " + "\n" + "See the following links if you would like to check the other sites: " + "\n")
-            for website in generate_website_links(streamer, vod_id):
-                print(website)
-
+        vod_recover(streamer, vod_id, parse_datetime_twitchtracker(tracker_url))
+    else:
+        print("Link not supported.. Returning to main menu.")
+        return
 
 def bulk_vod_recovery():
     streamer_name = input("Enter streamer name: ")
