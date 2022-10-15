@@ -17,7 +17,7 @@
 * The script uses UTC timezone as default when recovering vods.
 * If using manual recover please ensure to input the seconds value as 00 when running the script as the script brute forces the seconds value automatically.
 * TwitchTracker/StreamsCharts/Sullygnome are the sites that are currently supported by the script.
-* **SullyGnome Note: **  vod retrieval for SullyGnome assumes the year is the current year as there is no year indication on the website when looking at a particlular stream.
+* **SullyGnome Note:**  vod retrieval for SullyGnome assumes the year is the current year as there is no year indication on the website when looking at a particlular stream.
 
 # Downloading of M3U8 links
 * In order to download an M3U8 choose option 5 in the main menu and input the M3U8 link.
