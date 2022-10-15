@@ -490,7 +490,7 @@ def download_m3u8(url):
     videos = []
     ts_video_list = natsorted(check_segment_availability(get_segments(url)))
     for ts_files in ts_video_list:
-        print(ts_files)
+        print("Processing.... " + ts_files)
         if ts_files.endswith(".ts"):
             video = VideoFileClip(ts_files)
             videos.append(video)
