@@ -6,6 +6,8 @@ from datetime import timedelta
 import grequests
 import requests
 from bs4 import BeautifulSoup
+from moviepy.editor import concatenate_videoclips, VideoFileClip
+from natsort import natsorted
 
 domains = ["https://vod-secure.twitch.tv/",
            "https://vod-metro.twitch.tv/",
@@ -52,7 +54,7 @@ user_agents = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KH
 
 def return_main_menu():
     print("WELCOME TO VOD RECOVERY" + "\n")
-    menu = "1) Recover Vod" + "\n" + "2) Recover Clips" + "\n" + "3) Unmute an M3U8 file" + "\n" + "4) Check M3U8 Segments" + "\n" + "5) Exit" + "\n"
+    menu = "1) Recover Vod" + "\n" + "2) Recover Clips" + "\n" + "3) Unmute an M3U8 file" + "\n" + "4) Check M3U8 Segments" + "\n" + "5) Download M3U8 (.MP4 extension)" + "\n" + "6) Exit" "\n"
     print(menu)
 
 
@@ -267,6 +269,7 @@ def get_segments(url):
 def check_segment_availability(segments):
     valid_segment_counter = 0
     all_segments = []
+    valid_segments = []
     for url in segments:
         all_segments.append(url.strip())
     request_session = requests.Session()
@@ -274,7 +277,8 @@ def check_segment_availability(segments):
     for result in grequests.imap(rs, size=100):
         if result.status_code == 200:
             valid_segment_counter += 1
-    return valid_segment_counter
+            valid_segments.append(result.url)
+    return valid_segments
 
 def vod_recover(streamer, vod_id, timestamp):
     print("Vod is " + str(
@@ -289,7 +293,7 @@ def vod_recover(streamer, vod_id, timestamp):
                 print("Total Number of Segments: " + str(len(get_segments(url_list[0]))))
                 user_option = input("Would you like to check if segments are valid (Y/N): ")
                 if user_option.upper() == "Y":
-                    print(str(check_segment_availability(get_segments(url_list[0]))) + " of " + str(
+                    print(str(len(check_segment_availability(get_segments(url_list[0])))) + " of " + str(
                         len(get_segments(url_list[0]))) + " Segments are valid")
                 else:
                     return
@@ -482,6 +486,18 @@ def bulk_clip_recovery():
         total_counter, valid_counter, iteration_counter = 0, 0, 0
 
 
+def download_m3u8(url):
+    videos = []
+    ts_video_list = natsorted(check_segment_availability(get_segments(url)))
+    for ts_files in ts_video_list:
+        print(ts_files)
+        if ts_files.endswith(".ts"):
+            video = VideoFileClip(ts_files)
+            videos.append(video)
+    final_vod_output = concatenate_videoclips(videos)
+    final_vod_output.to_videofile(os.path.join(get_default_directory(), parse_m3u8_link(url)[0] + "_" + parse_m3u8_link(url)[1] + ".mp4"), fps=60, remove_temp=True)
+
+
 def download_clips(directory, streamer, vod_id):
     counter = 0
     print("Starting Download....")
@@ -514,10 +530,10 @@ def download_clips(directory, streamer, vod_id):
 
 def run_script():
     menu = 0
-    while menu < 5:
+    while menu < 6:
         return_main_menu()
         menu = int(input("Please choose an option: "))
-        if menu == 5:
+        if menu == 6:
             exit()
         elif menu == 1:
             vod_type = int(input(
@@ -553,9 +569,12 @@ def run_script():
                 print("Vod does NOT contain muted segments")
         elif menu == 4:
             url = input("Enter M3U8 Link: ")
-            print(str(check_segment_availability(get_segments(url))) + " of " + str(
+            print(str(len(check_segment_availability(get_segments(url)))) + " of " + str(
                 len(get_segments(url))) + " Segments are valid")
             remove_file(generate_vod_filename(parse_m3u8_link(url)[0], parse_m3u8_link(url)[1]))
+        elif menu == 5:
+            url = input("Enter M3U8 Link: ")
+            download_m3u8(url)
         else:
             print("Invalid Option! Exiting...")
 
