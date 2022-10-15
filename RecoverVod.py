@@ -196,6 +196,21 @@ def parse_datetime_twitchtracker(tracker_url):
     twitchtracker_datetime = bs.find_all('div', {'class': 'stream-timestamp-dt'})[0].text
     return twitchtracker_datetime
 
+def parse_datetime_sullygnome(tracker_url):
+    response = requests.get(tracker_url, headers=return_header(), allow_redirects=False)
+    bs = BeautifulSoup(response.content, 'html.parser')
+    stream_date = bs.find_all('div', {'class': 'MiddleSubHeaderItemValue'})[6].text
+    if len(stream_date.split(" ")[1]) > 3:
+        day = stream_date.split(" ")[1][:2]
+    else:
+        day = stream_date.split(" ")[1][:1]
+    month = stream_date.split(" ")[2]
+    year = datetime.datetime.today().year
+    timestamp = stream_date.split(" ")[3]
+    stream_datetime = day + " " + month + " " + str(year) + " " + timestamp
+    sullygnome_datetime = datetime.datetime.strftime(datetime.datetime.strptime(stream_datetime, "%d %B %Y %I:%M%p"), "%Y-%m-%d %H:%M:%S")
+    return sullygnome_datetime
+
 
 def unmute_vod(url):
     file_contents = []
@@ -223,7 +238,7 @@ def unmute_vod(url):
     print(os.path.basename(vod_file_path) + " Has been unmuted. File can be found in " + vod_file_path)
 
 
-def get_segments(url):
+def get_all_playlist_segments(url):
     counter = 0
     file_contents, segment_list = [], []
     vod_file_path = generate_vod_filename(parse_m3u8_link(url)[0], parse_m3u8_link(url)[1])
@@ -266,7 +281,7 @@ def get_segments(url):
     return segment_list
 
 
-def check_segment_availability(segments):
+def get_valid_segments(segments):
     valid_segment_counter = 0
     all_segments = []
     valid_segments = []
@@ -280,6 +295,12 @@ def check_segment_availability(segments):
             valid_segments.append(result.url)
     return valid_segments
 
+def return_segment_ratio(url):
+    segment_string = str(len(get_valid_segments(get_all_playlist_segments(url)))) + " of " + str(
+        len(get_all_playlist_segments(url))) + " Segments are valid"
+    print(segment_string)
+
+
 def vod_recover(streamer, vod_id, timestamp):
     print("Vod is " + str(
         get_vod_age(timestamp)) + " days old. If the vod is older than 60 days chances of recovery are slim." + "\n")
@@ -290,17 +311,22 @@ def vod_recover(streamer, vod_id, timestamp):
             user_input = input("Would you like to unmute the vod (Y/N): ")
             if user_input.upper() == "Y":
                 unmute_vod(url_list[0])
-                print("Total Number of Segments: " + str(len(get_segments(url_list[0]))))
+                print("Total Number of Segments: " + str(len(get_all_playlist_segments(url_list[0]))))
                 user_option = input("Would you like to check if segments are valid (Y/N): ")
                 if user_option.upper() == "Y":
-                    print(str(len(check_segment_availability(get_segments(url_list[0])))) + " of " + str(
-                        len(get_segments(url_list[0]))) + " Segments are valid")
+                    return_segment_ratio(url_list[0])
                 else:
                     return
             else:
                 return
         else:
             print(url_list[0] + "\n" + "Vod does NOT contain muted segments")
+            print("Total Number of Segments: " + str(len(get_all_playlist_segments(url_list[0]))))
+            user_option = input("Would you like to check if segments are valid (Y/N): ")
+            if user_option.upper() == "Y":
+                return_segment_ratio(url_list[0])
+            else:
+                return
     else:
         print(
             "No vods found using current domain list. " + "\n" + "See the following links if you would like to check the other sites: " + "\n")
@@ -316,7 +342,7 @@ def manual_vod_recover():
 
 
 def website_vod_recover():
-    tracker_url = input("Enter twitchtracker/streamscharts url:  ")
+    tracker_url = input("Enter twitchtracker/streamscharts/sullygnome url:  ")
     if "streamscharts" in tracker_url:
         streamer = tracker_url.split("channels/", 1)[1].split("/")[0]
         vod_id = tracker_url.split("streams/", 1)[1]
@@ -325,6 +351,10 @@ def website_vod_recover():
         streamer = tracker_url.split("com/", 1)[1].split("/")[0]
         vod_id = tracker_url.split("streams/", 1)[1]
         vod_recover(streamer, vod_id, parse_datetime_twitchtracker(tracker_url))
+    elif "sullygnome" in tracker_url:
+        streamer = tracker_url.split("channel/", 1)[1].split("/")[0]
+        vod_id = tracker_url.split("stream/", 1)[1]
+        vod_recover(streamer, vod_id, parse_datetime_sullygnome(tracker_url))
     else:
         print("Link not supported.. Returning to main menu.")
         return
@@ -488,14 +518,14 @@ def bulk_clip_recovery():
 
 def download_m3u8(url):
     videos = []
-    ts_video_list = natsorted(check_segment_availability(get_segments(url)))
+    ts_video_list = natsorted(get_valid_segments(get_all_playlist_segments(url)))
     for ts_files in ts_video_list:
         print("Processing.... " + ts_files)
         if ts_files.endswith(".ts"):
             video = VideoFileClip(ts_files)
             videos.append(video)
     final_vod_output = concatenate_videoclips(videos)
-    final_vod_output.to_videofile(os.path.join(get_default_directory(), parse_m3u8_link(url)[0] + "_" + parse_m3u8_link(url)[1] + ".mp4"), fps=60, remove_temp=True)
+    final_vod_output.to_videofile(os.path.join(get_default_directory(), "VodRecovery_"+parse_m3u8_link(url)[0] + "_" + parse_m3u8_link(url)[1] + ".mp4"), fps=60, remove_temp=True)
 
 
 def download_clips(directory, streamer, vod_id):
@@ -539,10 +569,10 @@ def run_script():
             vod_type = int(input(
                 "Enter what type of vod recovery: " + "\n" + "1) Recover Vod" + "\n" + "2) Recover vods from SullyGnome CSV export" + "\n"))
             if vod_type == 1:
-                recovery_method = input("Enter vod recovery method: " + "\n" + "1) Manual Recover" + "\n" + "2) Website Recover" + "\n")
-                if recovery_method == "1":
+                recovery_method = int(input("Enter vod recovery method: " + "\n" + "1) Manual Recover" + "\n" + "2) Website Recover" + "\n"))
+                if recovery_method == 1:
                     manual_vod_recover()
-                elif recovery_method == "2":
+                elif recovery_method == 2:
                     website_vod_recover()
                 else:
                     print("Invalid option returning to main menu.")
@@ -569,8 +599,7 @@ def run_script():
                 print("Vod does NOT contain muted segments")
         elif menu == 4:
             url = input("Enter M3U8 Link: ")
-            print(str(len(check_segment_availability(get_segments(url)))) + " of " + str(
-                len(get_segments(url))) + " Segments are valid")
+            return_segment_ratio(url)
             remove_file(generate_vod_filename(parse_m3u8_link(url)[0], parse_m3u8_link(url)[1]))
         elif menu == 5:
             url = input("Enter M3U8 Link: ")
