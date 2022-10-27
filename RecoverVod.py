@@ -294,9 +294,9 @@ def get_valid_segments(segments):
         count += 1
         progress_percentage = (count * 100) // len(all_segments)
         if (count==len(all_segments)):
-            print("Checking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='')
+            print("\rChecking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='')
         else:
-            print("Checking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='', end='\r')
+            print("\rChecking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='', end='')
         if result.status_code == 200:
             valid_segment_counter += 1
             valid_segments.append(result.url)
