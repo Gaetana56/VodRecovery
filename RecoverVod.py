@@ -2,6 +2,7 @@ import datetime
 import hashlib
 import os
 import random
+import re
 from datetime import timedelta
 import grequests
 import requests
@@ -146,10 +147,15 @@ def get_all_clip_urls(clip_dict, clip_format):
     return full_url_list
 
 
-def parse_m3u8_link(url):
-    streamer = url.split("_")[1]
-    vod_id = url.split("_")[2].split("/")[0]
-    return streamer, vod_id
+def return_username(url):
+    indices = [i.start() for i in re.finditer('_', url)]
+    username = url[indices[0] + 1:indices[-2]]
+    return username
+
+def return_vod_id(url):
+    indices = [i.start() for i in re.finditer('_', url)]
+    vod_id = url[indices[0]+len(return_username(url))+2:indices[-1]]
+    return vod_id
 
 
 def return_file_contents(streamer, vod_id):
@@ -215,7 +221,7 @@ def parse_datetime_sullygnome(tracker_url):
 def unmute_vod(url):
     file_contents = []
     counter = 0
-    vod_file_path = generate_vod_filename(parse_m3u8_link(url)[0], parse_m3u8_link(url)[1])
+    vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url))
     with open(vod_file_path, "w") as vod_file:
         vod_file.write(requests.get(url, stream=True).text)
     vod_file.close()
@@ -241,7 +247,7 @@ def unmute_vod(url):
 def get_all_playlist_segments(url):
     counter = 0
     file_contents, segment_list = [], []
-    vod_file_path = generate_vod_filename(parse_m3u8_link(url)[0], parse_m3u8_link(url)[1])
+    vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url))
     if os.path.exists(vod_file_path):
         with open(vod_file_path, "r+") as vod_file:
             for segment in vod_file.readlines():
@@ -525,7 +531,7 @@ def download_m3u8(url):
             video = VideoFileClip(ts_files)
             videos.append(video)
     final_vod_output = concatenate_videoclips(videos)
-    final_vod_output.to_videofile(os.path.join(get_default_directory(), "VodRecovery_"+parse_m3u8_link(url)[0] + "_" + parse_m3u8_link(url)[1] + ".mp4"), fps=60, remove_temp=True)
+    final_vod_output.to_videofile(os.path.join(get_default_directory(), "VodRecovery_"+return_username(url) + "_" + return_vod_id(url) + ".mp4"), fps=60, remove_temp=True)
 
 
 def download_clips(directory, streamer, vod_id):
@@ -600,7 +606,7 @@ def run_script():
         elif menu == 4:
             url = input("Enter M3U8 Link: ")
             return_segment_ratio(url)
-            remove_file(generate_vod_filename(parse_m3u8_link(url)[0], parse_m3u8_link(url)[1]))
+            remove_file(generate_vod_filename(return_username(url), return_vod_id(url)))
         elif menu == 5:
             url = input("Enter M3U8 Link: ")
             download_m3u8(url)
