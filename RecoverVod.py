@@ -289,6 +289,7 @@ def get_all_playlist_segments(url):
 
 def get_valid_segments(segments):
     valid_segment_counter = 0
+    count = 0
     all_segments = []
     valid_segments = []
     for url in segments:
@@ -296,6 +297,12 @@ def get_valid_segments(segments):
     request_session = requests.Session()
     rs = [grequests.head(u, session=request_session) for u in all_segments]
     for result in grequests.imap(rs, size=100):
+        count += 1
+        progress_percentage = (count * 100) // len(all_segments)
+        if (count==len(all_segments)):
+            print("\rChecking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='')
+        else:
+            print("\rChecking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='', end='')
         if result.status_code == 200:
             valid_segment_counter += 1
             valid_segments.append(result.url)
