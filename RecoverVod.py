@@ -55,7 +55,7 @@ user_agents = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KH
 
 def return_main_menu():
     print("WELCOME TO VOD RECOVERY" + "\n")
-    menu = "1) Recover Vod" + "\n" + "2) Recover Clips" + "\n" + "3) Unmute an M3U8 file" + "\n" + "4) Check M3U8 Segments" + "\n" + "5) Download M3U8 (.MP4 extension)" + "\n" + "6) Exit" "\n"
+    menu = "1) Recover Vod" + "\n" + "2) Recover Clips" + "\n" + "3) Unmute an M3U8 file" + "\n" + "4) Check M3U8 Segments" + "\n" + "5) Generate M3U8 file (ONLY includes valid segments)" + "\n" + "6) Download M3U8 (.MP4 extension)" + "\n" + "7) Exit" + "\n"
     print(menu)
 
 
@@ -243,7 +243,38 @@ def unmute_vod(url):
             else:
                 vod_file.write(segment)
     vod_file.close()
-    print(os.path.basename(vod_file_path) + " Has been unmuted. File can be found in " + vod_file_path)
+
+
+def return_valid_file(url):
+    unmute_vod(url)
+    new_playlist = []
+    vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url))
+    new_vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url) + "_MODIFIED")
+    lines = open(vod_file_path, "r+").read().splitlines()
+    segments = get_valid_segments(get_all_playlist_segments(url))
+    if len(segments) < 1:
+        print("No segments are valid.. Cannot generate M3U8! Returning to main menu.")
+        remove_file(vod_file_path)
+        return
+    new_playlist_segments = [x for x in segments if x in lines]
+    for segment in natsorted(new_playlist_segments):
+        for line in lines:
+            if line == segment:
+                new_playlist.append(segment)
+            if line != segment and line.startswith("#"):
+                new_playlist.append(line)
+            elif line.endswith(".ts") and segment not in new_playlist and not line.startswith("#"):
+                line = "#" + line
+                new_playlist.append(line)
+            else:
+                if line not in new_playlist:
+                    new_playlist.append(line)
+        break
+    with open(new_vod_file_path, "a+") as new_vod_file:
+        for playlist_lines in new_playlist:
+            new_vod_file.write(playlist_lines + "\n")
+    new_vod_file.close()
+    remove_file(vod_file_path)
 
 
 def get_all_playlist_segments(url):
@@ -291,7 +322,7 @@ def get_all_playlist_segments(url):
 
 def get_valid_segments(segments):
     valid_segment_counter = 0
-    count = 0
+    current_count = 0
     all_segments = []
     valid_segments = []
     for url in segments:
@@ -299,12 +330,12 @@ def get_valid_segments(segments):
     request_session = requests.Session()
     rs = [grequests.head(u, session=request_session) for u in all_segments]
     for result in grequests.imap(rs, size=100):
-        count += 1
-        progress_percentage = (count * 100) // len(all_segments)
-        if count == len(all_segments):
-            print("\rChecking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='')
+        current_count += 1
+        progress_percentage = (current_count * 100) // len(all_segments)
+        if current_count == len(all_segments):
+            print("\rChecking segment ", current_count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='')
         else:
-            print("\rChecking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='', end='')
+            print("\rChecking segment ", current_count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='', end='')
         if result.status_code == 200:
             valid_segment_counter += 1
             valid_segments.append(result.url)
@@ -577,10 +608,10 @@ def download_clips(directory, streamer, vod_id):
 
 def run_script():
     menu = 0
-    while menu < 6:
+    while menu < 7:
         return_main_menu()
         menu = int(input("Please choose an option: "))
-        if menu == 6:
+        if menu == 7:
             exit()
         elif menu == 1:
             vod_type = int(input(
@@ -619,6 +650,9 @@ def run_script():
             return_segment_ratio(url)
             remove_file(generate_vod_filename(return_username(url), return_vod_id(url)))
         elif menu == 5:
+            url = input("Enter M3U8 Link: ")
+            return_valid_file(url)
+        elif menu == 6:
             url = input("Enter M3U8 Link: ")
             download_m3u8(url)
         else:
