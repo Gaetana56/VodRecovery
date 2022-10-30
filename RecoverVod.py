@@ -152,9 +152,10 @@ def return_username(url):
     username = url[indices[0] + 1:indices[-2]]
     return username
 
+
 def return_vod_id(url):
     indices = [i.start() for i in re.finditer('_', url)]
-    vod_id = url[indices[0]+len(return_username(url))+2:indices[-1]]
+    vod_id = url[indices[0] + len(return_username(url)) + 2:indices[-1]]
     return vod_id
 
 
@@ -201,6 +202,7 @@ def parse_datetime_twitchtracker(tracker_url):
     bs = BeautifulSoup(response.content, 'html.parser')
     twitchtracker_datetime = bs.find_all('div', {'class': 'stream-timestamp-dt'})[0].text
     return twitchtracker_datetime
+
 
 def parse_datetime_sullygnome(tracker_url):
     response = requests.get(tracker_url, headers=return_header(), allow_redirects=False)
@@ -299,7 +301,7 @@ def get_valid_segments(segments):
     for result in grequests.imap(rs, size=100):
         count += 1
         progress_percentage = (count * 100) // len(all_segments)
-        if (count==len(all_segments)):
+        if count == len(all_segments):
             print("\rChecking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='')
         else:
             print("\rChecking segment ", count, "/", len(all_segments), "... (progress : ", progress_percentage, "%)", sep='', end='')
@@ -307,6 +309,7 @@ def get_valid_segments(segments):
             valid_segment_counter += 1
             valid_segments.append(result.url)
     return valid_segments
+
 
 def return_segment_ratio(url):
     segment_string = str(len(get_valid_segments(get_all_playlist_segments(url)))) + " of " + str(
@@ -371,6 +374,7 @@ def website_vod_recover():
     else:
         print("Link not supported.. Returning to main menu.")
         return
+
 
 def bulk_vod_recovery():
     streamer_name = input("Enter streamer name: ")
@@ -538,7 +542,7 @@ def download_m3u8(url):
             video = VideoFileClip(ts_files)
             videos.append(video)
     final_vod_output = concatenate_videoclips(videos)
-    final_vod_output.to_videofile(os.path.join(get_default_directory(), "VodRecovery_"+return_username(url) + "_" + return_vod_id(url) + ".mp4"), fps=60, remove_temp=True)
+    final_vod_output.to_videofile(os.path.join(get_default_directory(), "VodRecovery_" + return_username(url) + "_" + return_vod_id(url) + ".mp4"), fps=60, remove_temp=True)
 
 
 def download_clips(directory, streamer, vod_id):
