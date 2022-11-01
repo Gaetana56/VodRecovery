@@ -60,7 +60,7 @@ def return_main_menu():
 
 
 def get_default_directory():
-    return os.path.expanduser("~\\Documents\\")
+    return os.path.expanduser("~/Documents/")
 
 
 def generate_log_filename(streamer, vod_id):
