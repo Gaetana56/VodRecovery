@@ -281,42 +281,28 @@ def get_all_playlist_segments(url):
     counter = 0
     file_contents, segment_list = [], []
     vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url))
-    if os.path.exists(vod_file_path):
-        with open(vod_file_path, "r+") as vod_file:
-            for segment in vod_file.readlines():
-                url = url.replace("index-dvr.m3u8", "")
-                if "-muted" in segment and not segment.startswith("#"):
-                    counter += 1
-                    segment_list.append(str(url) + str(counter - 1) + "-muted.ts")
-                elif "-muted" not in segment and not segment.startswith("#"):
-                    counter += 1
-                    segment_list.append(str(url) + str(counter - 1) + ".ts")
-                else:
-                    pass
-        vod_file.close()
-    else:
-        with open(vod_file_path, "w") as vod_file:
-            vod_file.write(requests.get(url, stream=True).text)
-        vod_file.close()
-        with open(vod_file_path, "r") as vod_file:
-            for lines in vod_file.readlines():
-                file_contents.append(lines)
-        vod_file.close()
-        counter = 0
-        with open(vod_file_path, "w") as unmuted_vod_file:
-            for segment in file_contents:
-                url = url.replace("index-dvr.m3u8", "")
-                if "-unmuted" in segment and not segment.startswith("#"):
-                    counter += 1
-                    unmuted_vod_file.write(segment.replace(segment, str(url) + str(counter - 1)) + "-muted.ts" + "\n")
-                    segment_list.append(str(url) + str(counter - 1) + "-muted.ts")
-                elif "-unmuted" not in segment and not segment.startswith("#"):
-                    counter += 1
-                    unmuted_vod_file.write(segment.replace(segment, str(url) + str(counter - 1)) + ".ts" + "\n")
-                    segment_list.append(str(url) + str(counter - 1) + ".ts")
-                else:
-                    pass
-        unmuted_vod_file.close()
+    with open(vod_file_path, "w") as vod_file:
+        vod_file.write(requests.get(url, stream=True).text)
+    vod_file.close()
+    with open(vod_file_path, "r") as vod_file:
+        for lines in vod_file.readlines():
+            file_contents.append(lines)
+    vod_file.close()
+    with open(vod_file_path, "w") as vod_file:
+        for segment in file_contents:
+            url = url.replace("index-dvr.m3u8", "")
+            if "-unmuted" in segment and not segment.startswith("#"):
+                counter += 1
+                vod_file.write(segment.replace(segment, str(url) + str(counter - 1)) + "-muted.ts" + "\n")
+                segment_list.append(str(url) + str(counter - 1) + "-muted.ts")
+            elif "-unmuted" not in segment and not segment.startswith("#"):
+                counter += 1
+                vod_file.write(segment.replace(segment, str(url) + str(counter - 1)) + ".ts" + "\n")
+                segment_list.append(str(url) + str(counter - 1) + ".ts")
+            else:
+                vod_file.write(segment)
+    vod_file.close()
+    remove_file(vod_file_path)
     return segment_list
 
 
@@ -648,7 +634,6 @@ def run_script():
         elif menu == 4:
             url = input("Enter M3U8 Link: ")
             return_segment_ratio(url)
-            remove_file(generate_vod_filename(return_username(url), return_vod_id(url)))
         elif menu == 5:
             url = input("Enter M3U8 Link: ")
             return_valid_file(url)
