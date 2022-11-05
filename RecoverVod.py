@@ -457,7 +457,7 @@ def recover_all_clips():
             download_clips(get_default_directory(), streamer, vod_id)
             keep_log_option = input("Do you want to remove the log file? ")
             if keep_log_option.upper() == "Y":
-                remove_file(log_file)
+                remove_file(generate_log_filename(streamer, vod_id))
             else:
                 pass
         else:
@@ -562,7 +562,7 @@ def bulk_clip_recovery():
         if valid_counter != 0:
             if user_option.upper() == "Y":
                 download_clips(get_default_directory(), streamer, vod_id)
-                remove_file(log_file)
+                remove_file(generate_log_filename(streamer, vod_id))
             else:
                 print("Recovered clips logged to " + generate_log_filename(streamer, vod_id))
         total_counter, valid_counter, iteration_counter = 0, 0, 0
