@@ -214,12 +214,6 @@ def parse_datetime_sullygnome(tracker_url):
     sullygnome_datetime = datetime.datetime.strftime(datetime.datetime.strptime(stream_datetime, "%d %B %Y %I:%M%p"), "%Y-%m-%d %H:%M:%S")
     return sullygnome_datetime
 
-def dump_playlist(url):
-    vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url))
-    with open(vod_file_path, "w") as vod_file:
-        vod_file.write(requests.get(url, stream=True).text)
-    vod_file.close()
-
 def unmute_vod(url):
     file_contents = []
     counter = 0
@@ -245,6 +239,26 @@ def unmute_vod(url):
     vod_file.close()
     print(os.path.basename(vod_file_path) + " Has been unmuted!")
 
+def dump_playlist(url):
+    file_contents = []
+    counter = 0
+    vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url))
+    with open(vod_file_path, "w") as vod_file:
+        vod_file.write(requests.get(url, stream=True).text)
+    vod_file.close()
+    with open(vod_file_path, "r") as vod_file:
+        for lines in vod_file.readlines():
+            file_contents.append(lines)
+    vod_file.close()
+    with open(vod_file_path, "w") as vod_file:
+        for segment in file_contents:
+            url = url.replace("index-dvr.m3u8", "")
+            if not segment.startswith("#"):
+                counter += 1
+                vod_file.write(segment.replace(segment, str(url) + str(counter - 1)) + ".ts" + "\n")
+            else:
+                vod_file.write(segment)
+    vod_file.close()
 
 def return_valid_file(url):
     if is_vod_muted(url):
@@ -253,7 +267,7 @@ def return_valid_file(url):
     else:
         print("Vod does NOT contain muted segments")
         dump_playlist(url)
-    modified_playlist = []
+    new_playlist = []
     vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url))
     new_vod_file_path = generate_vod_filename(return_username(url), return_vod_id(url) + "_MODIFIED")
     lines = open(vod_file_path, "r+").read().splitlines()
@@ -266,17 +280,18 @@ def return_valid_file(url):
     for segment in natsorted(new_playlist_segments):
         for line in lines:
             if line == segment:
-                modified_playlist.append(segment)
+                new_playlist.append(segment)
             if line != segment and line.startswith("#"):
-                modified_playlist.append(line)
-            elif line.endswith(".ts") and segment not in modified_playlist:
+                new_playlist.append(line)
+            elif line.endswith(".ts") and segment not in new_playlist and not line.startswith("#"):
                 line = "#" + line
-                modified_playlist.append(line)
+                new_playlist.append(line)
             else:
-                pass
+                if line not in new_playlist:
+                    new_playlist.append(line)
         break
     with open(new_vod_file_path, "a+") as new_vod_file:
-        for playlist_lines in modified_playlist:
+        for playlist_lines in new_playlist:
             new_vod_file.write(playlist_lines + "\n")
     new_vod_file.close()
     remove_file(vod_file_path)
