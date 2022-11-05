@@ -1,3 +1,8 @@
+
+# Donations
+* <a href="https://paypal.me/VodRecovery?country.x=CA&locale.x=en_US" class="button">Support The Project</a> - Donations are not expected in any circumstances or are required to use the script. However if you do decide to donate know that it is greatly appreicated.
+
+
 # VodRecovery
 * Created By: ItIckeYd
 * Initial Release: May 3rd, 2022
