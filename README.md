@@ -10,11 +10,18 @@
 * Credits to daylamtayari - [TwitchRecover](https://github.com/TwitchRecover/TwitchRecover) repository helped with the logic to recover twitch videos.
 
 # Script Installation
-1. Install Python
+1. Download/Install Python - [Python Website](https://www.python.org/downloads/)
 2. Clone repository
 3. Navigate into cloned directory
 4. Install required packages ``` pip install -r requirements.txt ``` (Run in terminal)
 5. Run Script
+
+```
+git clone https://github.com/ItIckeYd/VodRecovery
+cd vodrecovery
+pip install -r requirements.txt
+python recovervod.py
+```
 
 # Script Notes
 * The script CANNOT recover every single vod. The script can only recover vods that still exist on the twitch vod domains.
@@ -23,6 +30,20 @@
 * If using manual recover please ensure to input the seconds value as 00 when running the script as the script brute forces the seconds value automatically.
 * TwitchTracker/StreamsCharts/Sullygnome are the sites that are currently supported by the script.
 * **SullyGnome Note:**  vod retrieval for SullyGnome assumes the year is the current year as there is no year indication on the website when looking at a particlular stream.
+
+# Script Preview
+```
+WELCOME TO VOD RECOVERY
+1) Recover Vod
+2) Recover Clips
+3) Unmute an M3U8 file
+4) Check M3U8 Segments
+5) Generate M3U8 file (ONLY includes valid segments)
+6) Download M3U8 (.MP4 extension)
+7) Exit
+
+Please choose an option:
+```
 
 # Downloading of M3U8 links
 * In order to download an M3U8 choose option 5 in the main menu and input the M3U8 link.
@@ -37,8 +58,8 @@
 
 # Optional IDE
 * Python has a few code editors that can be used which include the following:
-1. PyCharm (Recommended)
-2. Visual Studio Code
+1. PyCharm - [Pycharm Download](https://www.jetbrains.com/pycharm/download/#section=windows)
+2. Visual Studio Code - [Visual Studio Code Download](https://code.visualstudio.com/)
 
 # Additional Notes
 * If creating an issue for a problem that your experiencing please provide atleast 1 example.
