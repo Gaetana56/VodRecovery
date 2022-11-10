@@ -53,10 +53,34 @@ user_agents = ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KH
                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36']
 
 
-def return_main_menu():
-    print("WELCOME TO VOD RECOVERY" + "\n")
+def print_main_menu():
     menu = "1) Recover Vod" + "\n" + "2) Recover Clips" + "\n" + "3) Unmute an M3U8 file" + "\n" + "4) Check M3U8 Segments" + "\n" + "5) Generate M3U8 file (ONLY includes valid segments)" + "\n" + "6) Download M3U8 (.MP4 extension)" + "\n" + "7) Exit" + "\n"
     print(menu)
+
+
+def print_vod_type_menu():
+    vod_type_menu = "Enter what type of vod recovery: " + "\n" + "1) Recover Vod" + "\n" + "2) Recover vods from SullyGnome CSV export" + "\n" + "3) Exit" + "\n"
+    print(vod_type_menu)
+
+
+def print_vod_recovery_menu():
+    vod_recovery_method = "Enter vod recovery method: " + "\n" + "1) Manual Vod Recover" + "\n" + "2) Website Vod Recover" + "\n" + "3) Exit" + "\n"
+    print(vod_recovery_method)
+
+
+def print_clip_type_menu():
+    clip_type_menu = "Enter what type of clip recovery: " + "\n" + "1) Recover all clips from a single VOD" + "\n" + "2) Find random clips from a single VOD" + "\n" + "3) Bulk recover clips from SullyGnome CSV export" + "\n" + "4) Exit" + "\n"
+    print(clip_type_menu)
+
+
+def print_clip_recovery_menu():
+    clip_recovery_method = "Enter clip recovery method: " + "\n" + "1) Manual Clip Recover" + "\n" + "2) Website Clip Recover" + "\n" + "3) Exit" + "\n"
+    print(clip_recovery_method)
+
+
+def print_clip_format_menu():
+    clip_format_menu = "What clip url format would you like to use (delimited by spaces)? " + "\n" + "1) Default ([VodID]-offset-[interval])" + "\n" + "2) Alternate Format (vod-[VodID]-offset-[interval])" + "\n" + "3) Legacy ([VodID]-index-[interval])" + "\n"
+    print(clip_format_menu)
 
 
 def get_default_directory():
@@ -476,7 +500,8 @@ def bulk_vod_recovery():
 def clip_recover(streamer, vod_id, duration):
     total_counter, iteration_counter, valid_counter = 0, 0, 0
     valid_url_list = []
-    clip_format = input("What clip url format would you like to use (delimited by spaces)? " + "\n" + "1) Default ([VodID]-offset-[interval])" + "\n" + "2) Alternate Format (vod-[VodID]-offset-[interval])" + "\n" + "3) Legacy ([VodID]-index-[interval])" + "\n").split()
+    print_clip_format_menu()
+    clip_format = input("Please choose an option: ").split(" ")
     full_url_list = get_all_clip_urls(get_clip_format(vod_id, get_reps(duration)), clip_format)
     request_session = requests.Session()
     rs = [grequests.head(u, session=request_session) for u in full_url_list]
@@ -564,7 +589,8 @@ def get_random_clips():
     vod_id = input("Enter vod id: ")
     hours = input("Enter stream duration hour value: ")
     minutes = input("Enter stream duration minute value: ")
-    clip_format = input("What clip url format would you like to use (delimited by spaces)? " + "\n" + "1) Default ([VodID]-offset-[interval])" + "\n" + "2) Alternate Format (vod-[VodID]-offset-[interval])" + "\n" + "3) Legacy ([VodID]-index-[interval])" + "\n").split()
+    print_clip_format_menu()
+    clip_format = input("Please choose an option: ").split(" ")
     full_url_list = get_all_clip_urls(get_clip_format(vod_id, get_reps(get_duration(hours, minutes))), clip_format)
     random.shuffle(full_url_list)
     print("Total Number of Urls: " + str(len(full_url_list)))
@@ -588,7 +614,8 @@ def bulk_clip_recovery():
     streamer = input("Enter streamer name: ")
     file_path = input("Enter full path of sullygnome CSV file: ").replace('"', '')
     user_option = input("Do you want to download all clips recovered (Y/N)? ")
-    clip_format = input("What clip url format would you like to use (delimited by spaces)? " + "\n" + "1) Default ([VodID]-offset-[interval])" + "\n" + "2) Alternate Format (vod-[VodID]-offset-[interval])" + "\n" + "3) Legacy ([VodID]-index-[interval])" + "\n").split()
+    print_clip_format_menu()
+    clip_format = input("Please choose an option: ").split(" ")
     for vod_id, duration in parse_clip_csv_file(file_path).items():
         vod_counter += 1
         print("Processing Twitch Vod... " + str(vod_id) + " - " + str(vod_counter) + " of " + str(
@@ -662,42 +689,53 @@ def download_clips(directory, streamer, vod_id):
 
 
 def run_script():
+    print("WELCOME TO VOD RECOVERY" + "\n")
     menu = 0
     while menu < 7:
-        return_main_menu()
+        print_main_menu()
         menu = int(input("Please choose an option: "))
         if menu == 7:
             exit()
         elif menu == 1:
-            vod_type = int(input(
-                "Enter what type of vod recovery: " + "\n" + "1) Recover Vod" + "\n" + "2) Recover vods from SullyGnome CSV export" + "\n"))
+            print_vod_type_menu()
+            vod_type = int(input("Please choose an option: "))
             if vod_type == 1:
-                vod_recovery_method = int(input("Enter vod recovery method: " + "\n" + "1) Manual Vod Recover" + "\n" + "2) Website Vod Recover" + "\n"))
+                print_vod_recovery_menu()
+                vod_recovery_method = int(input("Please choose an option: "))
                 if vod_recovery_method == 1:
                     manual_vod_recover()
                 elif vod_recovery_method == 2:
                     website_vod_recover()
+                elif vod_recovery_method == 3:
+                    exit()
                 else:
                     print("Invalid option returning to main menu.")
             elif vod_type == 2:
                 bulk_vod_recovery()
+            elif vod_type == 3:
+                exit()
             else:
                 print("Invalid option! Returning to main menu.")
         elif menu == 2:
-            clip_type = int(input(
-                "Enter what type of clip recovery: " + "\n" + "1) Recover all clips from a single VOD" + "\n" + "2) Find random clips from a single VOD" + "\n" + "3) Bulk recover clips from SullyGnome CSV export" + "\n"))
+            print_clip_type_menu()
+            clip_type = int(input("Please choose an option: "))
             if clip_type == 1:
-                clip_recovery_method = int(input("Enter clip recovery method: " + "\n" + "1) Manual Clip Recover" + "\n" + "2) Website Clip Recover" + "\n"))
+                print_clip_recovery_menu()
+                clip_recovery_method = int(input("Please choose an option: "))
                 if clip_recovery_method == 1:
                     manual_clip_recover()
                 elif clip_recovery_method == 2:
                     website_clip_recover()
+                elif clip_recovery_method == 3:
+                    exit()
                 else:
                     print("Invalid option returning to main menu.")
             elif clip_type == 2:
                 get_random_clips()
             elif clip_type == 3:
                 bulk_clip_recovery()
+            elif clip_type == 4:
+                exit()
             else:
                 print("Invalid option! Returning to main menu.")
         elif menu == 3:
