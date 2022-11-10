@@ -25,7 +25,7 @@ python recovervod.py
 
 # Script Notes
 * The script CANNOT recover every single vod. The script can only recover vods that still exist on the twitch vod domains.
-* Due to twitch's deletion process vods are typically only available up to 60 days old. The script will notify you if its older then 60 days.
+* Twitch saves broadcasts for up to 14 days (60 days for Partners, Turbo and Prime Users). The script notify you how old the broadcast is.
 * The script uses UTC timezone as default when recovering vods.
 * If using manual recover please ensure to input the seconds value as 00 when running the script as the script brute forces the seconds value automatically.
 * TwitchTracker/StreamsCharts/Sullygnome are the sites that are currently supported by the script for vod and clip recovery.
