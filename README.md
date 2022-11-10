@@ -28,7 +28,7 @@ python recovervod.py
 * Due to twitch's deletion process vods are typically only available up to 60 days old. The script will notify you if its older then 60 days.
 * The script uses UTC timezone as default when recovering vods.
 * If using manual recover please ensure to input the seconds value as 00 when running the script as the script brute forces the seconds value automatically.
-* TwitchTracker/StreamsCharts/Sullygnome are the sites that are currently supported by the script.
+* TwitchTracker/StreamsCharts/Sullygnome are the sites that are currently supported by the script for vod and clip recovery.
 * **SullyGnome Note:**  vod retrieval for SullyGnome assumes the year is the current year as there is no year indication on the website when looking at a particlular stream.
 
 # Script Preview
