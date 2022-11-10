@@ -67,6 +67,6 @@ Please choose an option:
 
 
 # Latest Release
-[Stable Release 1.0.4.0](https://github.com/ItIckeYd/VodRecovery/releases/tag/1.0.4.0-Full-Release)
+[Stable Release 1.0.5.0](https://github.com/ItIckeYd/VodRecovery/releases/tag/1.0.4.0-Full-Release)
 **- For fully updated code please download code from the **Main** branch** 
 
