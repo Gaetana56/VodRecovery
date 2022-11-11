@@ -183,6 +183,13 @@ def return_vod_id(url):
     return vod_id
 
 
+def remove_chars_from_ordinal_numbers(datetime_string):
+    ordinal_array = ["th", "nd", "st", "rd"]
+    for exclude_string in ordinal_array:
+        if exclude_string in datetime_string:
+            return datetime_string.replace(datetime_string.split(" ")[1], datetime_string.split(" ")[1][:-len(exclude_string)])
+
+
 def return_file_contents(streamer, vod_id):
     with open(generate_log_filename(streamer, vod_id)) as f:
         content = f.readlines()
@@ -252,16 +259,9 @@ def parse_datetime_sullygnome(tracker_url):
     response = requests.get(tracker_url, headers=return_header(), allow_redirects=False)
     bs = BeautifulSoup(response.content, 'html.parser')
     stream_date = bs.find_all('div', {'class': 'MiddleSubHeaderItemValue'})[6].text
-    if len(stream_date.split(" ")[1]) > 3:
-        day = stream_date.split(" ")[1][:2]
-    else:
-        day = stream_date.split(" ")[1][:1]
-    month = stream_date.split(" ")[2]
-    year = datetime.datetime.today().year
-    timestamp = stream_date.split(" ")[3]
-    stream_datetime = day + " " + month + " " + str(year) + " " + timestamp
-    sullygnome_datetime = datetime.datetime.strftime(datetime.datetime.strptime(stream_datetime, "%d %B %Y %I:%M%p"), "%Y-%m-%d %H:%M:%S")
-    return sullygnome_datetime
+    modified_stream_date = remove_chars_from_ordinal_numbers(stream_date)
+    formatted_stream_date = datetime.datetime.strftime(datetime.datetime.strptime(modified_stream_date, "%A %d %B %I:%M%p"), "%m-%d %H:%M:%S")
+    return str(datetime.datetime.now().year) + "-" + formatted_stream_date
 
 
 def unmute_vod(url):
@@ -567,18 +567,9 @@ def parse_vod_csv_file(file_path):
     lines = csv_file.readlines()[1:]
     for line in lines:
         if line.strip():
-            if len(line.split(",")[1].split(" ")[1]) > 3:
-                day = line.split(",")[1].split(" ")[1][:2]
-            else:
-                day = line.split(",")[1].split(" ")[1][:1]
-            month = line.split(",")[1].split(" ")[2]
-            year = line.split(",")[1].split(" ")[3]
-            timestamp = line.split(",")[1].split(" ")[4]
-            stream_datetime = day + " " + month + " " + year + " " + timestamp
+            modified_stream_date = remove_chars_from_ordinal_numbers(line.split(",")[1].replace('"', ""))
+            stream_date = datetime.datetime.strftime(datetime.datetime.strptime(modified_stream_date, "%A %d %B %Y %H:%M"), "%Y-%m-%d %H:%M:%S")
             vod_id = line.partition("stream/")[2].split(",")[0].replace('"', "")
-            stream_date = datetime.datetime.strftime(
-                datetime.datetime.strptime(stream_datetime.strip().replace('"', "") + ":00", "%d %B %Y %H:%M:%S"),
-                "%Y-%m-%d %H:%M:%S")
             vod_info_dict.update({stream_date: vod_id})
     csv_file.close()
     return vod_info_dict
