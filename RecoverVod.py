@@ -638,15 +638,7 @@ def bulk_clip_recovery():
 
 
 def download_m3u8(url):
-    videos = []
-    ts_video_list = natsorted(get_valid_segments(get_all_playlist_segments(url)))
-    for ts_files in ts_video_list:
-        print("Processing.... " + ts_files)
-        if ts_files.endswith(".ts"):
-            video = VideoFileClip(ts_files)
-            videos.append(video)
-    final_vod_output = concatenate_videoclips(videos)
-    final_vod_output.to_videofile(os.path.join(get_default_directory(), "VodRecovery_" + return_username(url) + "_" + return_vod_id(url) + ".mp4"), fps=60, remove_temp=True)
+    os.system("ffmpeg.exe -i \"{}\" -c copy -bsf:a aac_adtstoasc \"{}.mp4\"".format(url, generate_vod_filename(return_username(url), return_vod_id(url)).removesuffix(".m3u8")))
 
 
 def download_clips(directory, streamer, vod_id):
