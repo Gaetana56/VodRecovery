@@ -7,7 +7,8 @@ from datetime import timedelta
 import grequests
 import requests
 from bs4 import BeautifulSoup
-from moviepy.editor import concatenate_videoclips, VideoFileClip
+from moviepy.video.compositing.concatenate import concatenate_videoclips
+from moviepy.video.io.VideoFileClip import VideoFileClip
 from natsort import natsorted
 
 domains = ["https://vod-secure.twitch.tv/",
@@ -638,8 +639,15 @@ def bulk_clip_recovery():
 
 
 def download_m3u8(url):
-    os.system("ffmpeg.exe -i \"{}\" -c copy -bsf:a aac_adtstoasc \"{}.mp4\"".format(url, generate_vod_filename(return_username(url), return_vod_id(url)).removesuffix(".m3u8")))
-
+    videos = []
+    ts_video_list = natsorted(get_valid_segments(get_all_playlist_segments(url)))
+    for ts_files in ts_video_list:
+        print("Processing.... " + ts_files)
+        if ts_files.endswith(".ts"):
+            video = VideoFileClip(ts_files)
+            videos.append(video)
+    final_vod_output = concatenate_videoclips(videos)
+    final_vod_output.to_videofile(os.path.join(get_default_directory(), "VodRecovery_" + return_username(url) + "_" + return_vod_id(url) + ".mp4"), fps=60, remove_temp=True)
 
 def download_clips(directory, streamer, vod_id):
     counter = 0
